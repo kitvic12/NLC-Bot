@@ -1,6 +1,6 @@
 import keras.src
 from api import bot
-import userstate
+from database import user
 from telebot import types
 import numpy as np
 from PIL import Image
@@ -50,12 +50,12 @@ def prepare_image(image_bytes, target_size):
         raise
 
 def handle_photo(message):
-    state = userstate.get_state(message.chat.id, "types nlc")
+    state = user.get_state(message.chat.id, "types nlc")
     if not state:
         return False
 
     try:
-        userstate.update_state(message.chat.id, "types nlc", False)
+        user.update_state(message.chat.id, "types nlc", False)
         file_info = bot.get_file(message.photo[-1].file_id)
         image_bytes = bot.download_file(file_info.file_path)
         

@@ -6,14 +6,33 @@ from datetime import datetime
 
 import log
 
-import userstate
+from database import user
 
 from camera.weather import locations, check_cloudiness
 from camera.get_image import get_camera_image, send_image_to_telegram
 
 from commands.menu import menu
 
-place = ["Азеево", "Айхал", "Альметьевск", "Багдарин", "Березники", "Васкелово", "Вологда", "Гулькевичи", "Ирбит", "Калининград", "Калуга", "Каменск-Уральский", "Краснодар", "Москва", "Остроленский", "Пермь", "Попово", "Провидения", "Пятиречье", "Русское", "Рязань", "Стрежевой", "Тула", "Уткино", "Челябинск", "Юрга", "Ярославль", "Тырнауз"]
+places = ["ЦФО", "Северо-Запад(СЗФО)", "Юг России", "Поволжье", "Урал", "Сибирь", "Дальний Восток"]
+
+place = [
+    "Калуга", "Москва", "Попово", "Рязань", "Тула", "Уткино", "Ярославль", "Васкелово",
+    "Гулькевичи", "Краснодар", "Тырнауз", "Вологда", "Калининград", "Русское", 
+    "Азево", "Альметьевск", "Березники", "Ирбит", "Каменск-Уральский", "Пермь",
+    "Остроленский", "Челябинск", "Айхал", "Багдарин", "Стрежевой", "Юрга", "Пятиречье", "Провидения"
+    ]
+
+place_dict = {
+    "ЦФО":["Калуга", "Москва", "Попово", "Рязань", "Тула", "Уткино", "Ярославль"],
+    "Северо-Запад(СЗФО)":["Васкелово", "Вологда", "Калининград", "Русское"],
+    "Юг":["Гулькевичи", "Краснодар", "Тырнауз"],
+    "Поволжье":["Азево", "Альметьевск", "Березники", "Ирбит", "Каменск-Уральский", "Пермь"],
+    "Урал":["Остроленский", "Челябинск"],
+    "Сибирь":["Айхал", "Багдарин", "Стрежевой", "Юрга"],
+    "Дальний":["Пятиречье", "Провидения"]
+}
+
+
 
 MOSCOW_TZ = pytz.timezone('Europe/Moscow')
 
@@ -29,22 +48,28 @@ def see_what(call, query):
     ))
 
 def all_camera(call):
-    global place
+    global places
     bot.delete_message(call.message.chat.id, call.message.message_id)
     markup = types.InlineKeyboardMarkup(row_width=1)
 
-    if not place:
-        bot.send_message(call.message.chat.id, "Нет доступных камер.")
-        return
-
-    for i in range(len(place)):
-        button = types.InlineKeyboardButton(text=place[i], callback_data=f"seen {place[i]}")
+    for i in range(len(places)):
+        button = types.InlineKeyboardButton(text=places[i], callback_data=f"see_place {places[i]}")
         markup.add(button)
-    userstate.update_state(call.message.chat.id, "last markup", markup)
-    bot.send_message(call.message.chat.id, "Какую камеру вы хотите посмотреть?", reply_markup=markup)
+    bot.send_message(call.message.chat.id, "В каком примерном месте вы хотите посмотреть изображение с камеры?", reply_markup=markup)
+
+def place_camera(call, query):
+    bot.delete_message(call.message.chat.id, call.message.id)
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    for i in range(len(place_dict[query[0]])):
+        print(place_dict[query[0]][i])
+        button = types.InlineKeyboardButton(text=place_dict[query[0]][i], callback_data=f"seen {place_dict[query[0]][i]}")
+        markup.add(button)
+    markup.add(types.InlineKeyboardButton(text="🔙Назад", callback_data="see all"))
+    user.save_user_markup(call.message.chat.id, markup)
+    bot.send_message(call.message.chat.id, "Какую камеру вы хотите посмотреть?", reply_markup=markup)        
 
 def dont_camera(call):
-    global place
+
     bot.delete_message(call.message.chat.id, call.message.message_id)
     markup = types.InlineKeyboardMarkup(row_width=1)
     has_cameras = False
@@ -61,7 +86,7 @@ def dont_camera(call):
             has_cameras = True
     log.check("----------------", "WEATHER")
     if has_cameras:
-        userstate.update_state(call.message.chat.id, "last markup", markup)
+        user.save_user_markup(call.message.chat.id, markup)
         bot.send_message(call.message.chat.id, f"Выберите камеру:", reply_markup=markup)
     else:
         bot.send_message(call.message.chat.id, "Нет доступных камер без облачности.")
@@ -92,17 +117,21 @@ def return_menu(call, query):
             return
         elif query[0] == "yes":
             if query[1] == "callback":
-                userstate.update_state(call.message.chat.id, "callback", False)
+                user.update_state(call.message.chat.id, "callback", False)
             bot.delete_message(call.message.chat.id, call.message.id)
             menu(call.message) 
             return   
 
     except:
+        user.clear_user_markup(call.message.chat.id)
         bot.delete_message(call.message.chat.id, call.message.id)
         menu(call.message)
 
 
 def return_camera(call, query):
+    if not user.get_user_markup(call.message.chat.id):
+        all_camera(call)
+        return
     bot.delete_message(call.message.chat.id, call.message.id)
-    markup = userstate.get_state(call.message.chat.id, "last markup")
+    markup = user.get_user_markup(call.message.chat.id)
     bot.send_message(call.message.chat.id, "Выберите камеру:", reply_markup=markup)

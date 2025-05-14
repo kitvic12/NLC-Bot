@@ -5,7 +5,7 @@ from api import bot
 
 
 city_map = {
-    "Азеево": "https://starvisor.ru/azv/", 
+    "Азево": "https://starvisor.ru/azv/", 
     "Айхал": "https://starvisor.ru/ayk/",
     "Альметьевск": "https://starvisor.ru/almet/",
     "Васкелово": "https://starvisor.ru/spbd/",
@@ -58,4 +58,4 @@ def send_image_to_telegram(image_bytes, id):
     try:
         bot.send_photo(id, photo=image_bytes)
     except:
-        print("хуй")
+        print("Ошибка отправки")

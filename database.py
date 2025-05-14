@@ -1,95 +1,149 @@
-import pickle
-from datetime import datetime
-import os
-import pytz
-import log
+import json
+from typing import Dict, Any, Optional
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-USER_DB_FILE = "users_activity.pkl"
-MOSCOW_TZ = pytz.timezone('Europe/Moscow')
-
-class UserActivityTracker:
-    def __init__(self):
-        self.user_data = self._load_data()
-        self.ACTION_TYPES = {
-            'message': 'messages',
-            'command': 'commands',
-            'inline': 'inline'
-        }
+class UserDatabase:
+    def __init__(self, filename: str = 'database.json'):
+        self.filename = filename
+        self.data = self._load_data()
     
-    def _load_data(self):
-        if os.path.exists(USER_DB_FILE):
-            try:
-                with open(USER_DB_FILE, 'rb') as f:
-                    data = pickle.load(f)
-                    for user_id in data:
-                        if 'actions' not in data[user_id]:
-                            data[user_id]['actions'] = {v: 0 for v in self.ACTION_TYPES.values()}
-                    return data
-            except Exception as e:
-                log.error(f"Data load error: {str(e)}", "DB_ERROR")
-                return {}
-        return {}
-
-    def _save_data(self):
+    def _load_data(self) -> Dict[int, Dict[str, Any]]:
         try:
-            with open(USER_DB_FILE, 'wb') as f:
-                pickle.dump(self.user_data, f)
-        except Exception as e:
-            log.error(f"Data save error: {str(e)}", "DB_ERROR")
-
-    def _get_moscow_time(self):
-        return datetime.now(MOSCOW_TZ)
-
-    def update_activity(self, user, action_type):
-        if getattr(user, 'is_bot', False):
-            print(f"⚠️ Bot detected! ID={user.id}, Username=@{user.username}")
-            return
-
-        normalized_type = self.ACTION_TYPES.get(action_type)
-        if not normalized_type:
-            log.error(f"Unknown action type: {action_type}", "ACTION_ERROR")
-            return
-
-        user_id = user.id
-        now = self._get_moscow_time() 
-        
-        if user_id not in self.user_data:
-            print(f"➕ New user: ID={user_id}, Username=@{user.username}")
-            self.user_data[user_id] = {
-                'username': user.username,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'first_seen': now,
-                'last_seen': now,
-                'actions': {v: 0 for v in self.ACTION_TYPES.values()}
-            }
-        
-        self.user_data[user_id]['last_seen'] = now
-        self.user_data[user_id]['actions'][normalized_type] += 1
-        self._save_data()
-
-        user_id = user.id
-        now = self._get_moscow_time() 
-        
-        if user_id not in self.user_data:
-            self.user_data[user_id] = {
-                'username': user.username,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'first_seen': now,
-                'last_seen': now,
-                'actions': {v: 0 for v in self.ACTION_TYPES.values()}
-            }
-            log.log(f"New user registered: {user_id} (@{user.username}) at {now.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-        
-        self.user_data[user_id]['last_seen'] = now
-        self.user_data[user_id]['actions'][normalized_type] += 1
-        self._save_data()
-
-    def get_user_stats(self, user_id):
-        return self.user_data.get(user_id, None)
+            with open(self.filename, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return {
+                    int(user_id): {
+                        'username': user_data.get('username', ''),  
+                        'userstate': {str(k): v for k, v in user_data.get('userstate', {}).items()},
+                        'notification': user_data['notification']
+                    }
+                    for user_id, user_data in data.items()
+                }
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
     
-    def get_all_users(self):
-        return self.user_data
+    def _save_data(self):
+        with open(self.filename, 'w', encoding='utf-8') as f:
+            json.dump(
+                {str(user_id): user_data for user_id, user_data in self.data.items()},
+                f,
+                indent=4,
+                ensure_ascii=False
+            )
+    
+    def add_user(self, user_id: int, username: str = ''): 
+        if user_id not in self.data:
+            self.data[user_id] = {
+                'username': username,
+                'userstate': {},
+                'notification': 'on'
+            }
+            self._save_data()
+    
+    
+    def update_state(self, user_id: int, key: Any, value: Any):
 
-activity_tracker = UserActivityTracker()
+        if user_id in self.data:
+            str_key = str(key) 
+            if 'userstate' not in self.data[user_id]:
+                self.data[user_id]['userstate'] = {}
+            self.data[user_id]['userstate'][str_key] = value
+            self._save_data()
+    
+    def get_state(self, user_id: int, key: Any, default: Any = None) -> Any:
+        user = self.get_user(user_id)
+        if user and 'userstate' in user:
+            str_key = str(key)
+            return user['userstate'].get(str_key, default)
+        return default
+    
+    def get_user(self, user_id: int) -> Optional[Dict[str, Any]]:
+        return self.data.get(user_id)
+    
+    def set_notification(self, user_id: int, status: str):
+        if user_id in self.data and status in ('on', 'off'):
+            self.data[user_id]['notification'] = status
+            self._save_data()
+
+    def check(self, user_id: int):
+        user = self.get_user(user_id)
+        if user:
+            return self.data[user_id]['notification'] == "on"
+
+    def get_all_users(self):
+        for user_id, user_data in self.data.items():
+            yield {'user_id': user_id, **user_data}
+
+    def save_user_markup(self, user_id: int, markup: InlineKeyboardMarkup):
+        if user_id not in self.data:
+            self.data[user_id] = {'userstate': {}, 'notification': 'off'}
+
+        self.data[user_id]['userstate']['keyboard'] = [
+            [{'text': btn.text, **{k: v for k, v in btn.__dict__.items() if v}} 
+             for btn in row] 
+            for row in markup.keyboard
+        ]
+        self._save_data()
+
+    def get_user_markup(self, user_id: int) -> InlineKeyboardMarkup:
+        user = self.data.get(user_id)
+        if not user or 'keyboard' not in user.get('userstate', {}):
+            return False
+            
+        markup = InlineKeyboardMarkup()
+        for row in user['userstate']['keyboard']:
+            markup.add(*[InlineKeyboardButton(**btn) for btn in row])
+        return markup
+    
+    def clear_user_markup(self, user_id: int) -> bool:
+        if user_id in self.data and 'userstate' in self.data[user_id]:
+            if 'keyboard' in self.data[user_id]['userstate']:
+                del self.data[user_id]['userstate']['keyboard']
+                self._save_data()
+
+                
+
+
+import json
+
+def db_for_send(filename: str = 'database.json') -> list:
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            json_str = json.dumps(data, indent=4, ensure_ascii=False)
+            MAX_LENGTH = 4096
+            if len(json_str) <= MAX_LENGTH:
+                return [json_str]
+            parts = []
+            current_part = []
+            current_length = 0
+            opening_brace = "{\n"
+            current_part.append(opening_brace)
+            current_length += len(opening_brace)
+            for i, (user_id, user_data) in enumerate(data.items()):
+                user_entry = f'    "{user_id}": {json.dumps(user_data, indent=4, ensure_ascii=False)}'
+                if i < len(data) - 1:
+                    user_entry += ",\n"
+                else:
+                    user_entry += "\n"
+                if current_length + len(user_entry) > MAX_LENGTH - 2: 
+                    current_part.append("}")
+                    parts.append("".join(current_part))
+                    current_part = [opening_brace, user_entry]
+                    current_length = len(opening_brace) + len(user_entry)
+                else:
+                    current_part.append(user_entry)
+                    current_length += len(user_entry)
+            current_part.append("}")
+            parts.append("".join(current_part))
+            return parts
+            
+    except FileNotFoundError:
+        return ["⚠ Файл базы данных не найден"]
+    except json.JSONDecodeError:
+        return ["⚠ Ошибка чтения базы данных (некорректный JSON)"]
+    except Exception as e:
+        return [f"⚠ Неизвестная ошибка: {str(e)}"]
+
+
+user = UserDatabase()

@@ -3,7 +3,7 @@ from inline.see_video_query import place
 from camera.weather import check_cloudiness, locations
 from camera.get_image import get_camera_image
 from AI.nlc_or_cloud.check_on_camera import handle_photo
-from inline.subscribe import load_data
+from database import user
 from log import check
 from commands.menu import menu
 from always_check import moscow_time
@@ -52,10 +52,10 @@ def send_all(call, query):
     elif query[0] == "yes":
         mes = bot.send_message(call.message.chat.id, "Хорошо, запускаю рассылку оповещений, ожидайте...")
         photo = get_camera_image(query[1])
-        for chat in load_data():
-            if chat == call.message.chat.id:
+        for users in user.get_all_users():
+            if users['user_id'] == call.message.chat.id:
                 continue
-            else:
-                bot.send_photo(call.message.chat.id, photo, f"Были обнаружены серебристые облака на камере {query[1]}! Удачных наблюдений!")
+            elif users['notification'] == 'on':
+                bot.send_photo(users['user_id'], f"Были обнаружены серебристые облака на камере {query[1]}! Удачных наблюдений!")
         bot.edit_message_text("Все оповещения успешно отправлены! Ожидайте возврата в меню", call.message.chat.id, mes.id)        
         menu(call.message)

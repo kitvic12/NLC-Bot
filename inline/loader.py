@@ -3,6 +3,7 @@ from inline.see_video_query import what_camera
 from inline.see_video_query import camera
 from inline.see_video_query import return_menu
 from inline.see_video_query import return_camera
+from inline.see_video_query import place_camera
 
 
 from inline.do_you_see_nlc import see_nlc
@@ -26,7 +27,7 @@ handler_map = {
     "seen":camera,
     "menu":return_menu,
     "light":light_check,
-    "type":type_choise,
+    "type_choise":type_choise,
     "types":types_send_nlc,
     "back":back,
     "return_camera":return_camera,
@@ -35,5 +36,6 @@ handler_map = {
     "nlc":check_nlc_types,
     "see_now": see_now,
     "admin":admins,
-    "send":send_all
+    "send":send_all,
+    "see_place":place_camera
 }

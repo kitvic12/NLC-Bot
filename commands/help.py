@@ -3,7 +3,7 @@ from log import log
 from telebot import types
 from admins import is_admins
 
-from database import activity_tracker
+from user_activity import activity_tracker
 
 @bot.message_handler(commands=["help"])
 def help_cmd(message):
@@ -15,4 +15,4 @@ def help_cmd(message):
 def admin_command(message):
     activity_tracker.update_activity(message.from_user, 'command')
     log(f"{message.from_user.username} wrote admin_help", "Commands")
-    bot.send_message(message.chat.id, f"/fake - !указывать только ответом на сообщение! опровергает найденые ботом серебристые облака \n /get  - запросить логи (log, errorlog, checklog) \n /users - показывает всех пользователей и всю их статистику \n /clear - очищает логи(log, errorlog, checklog)")
+    bot.send_message(message.chat.id, f"/fake - !указывать только ответом на сообщение! опровергает найденые ботом серебристые облака \n /get  - запросить логи (log, errorlog, checklog) \n /users - показывает всех пользователей и всю их статистику \n /clear - очищает логи(log, errorlog, checklog) \n /allusers - показывает полную базу данных по пользователям")

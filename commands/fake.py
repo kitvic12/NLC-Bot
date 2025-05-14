@@ -1,6 +1,5 @@
 from api import bot
 from admins import is_admins
-from inline.subscribe import load_data
 from telebot.types import Message
 import pickle
 

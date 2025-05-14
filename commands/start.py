@@ -1,7 +1,7 @@
 from api import bot
 from log import log
 
-from database import activity_tracker
+from user_activity import activity_tracker
 
 @bot.message_handler(commands=["start"])
 def start_cmd(message):

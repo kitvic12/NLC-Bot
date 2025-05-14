@@ -25,7 +25,7 @@ def start_bot():
     while True:
         try:
             times = moscow_time()
-            bot.send_message(config["owner_id"], "Бот сартует")
+            bot.send_message(config["owner_id"], "Бот стартует")
             log.log_init()
             log.log(f"Start at {times}") 
             log.error_init()

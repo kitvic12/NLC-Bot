@@ -2,7 +2,7 @@ from api import bot
 from log import clear_log
 from admins import is_admins
 from log import log
-from database import activity_tracker
+from user_activity import activity_tracker
 
 @bot.message_handler(func=lambda message:is_admins(message.from_user.username), commands=["clear"])
 def clear_cmd(message):

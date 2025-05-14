@@ -1,7 +1,7 @@
 from api import bot
 import log
 from AI.nlc_or_cloud.check_on_camera import handle_photo
-from inline.subscribe import load_data
+from database import user
 from camera.weather import check_cloudiness, locations
 from camera.get_image import get_camera_image
 import pytz
@@ -10,7 +10,6 @@ import pickle
 import os
 from config import config
 
-my_set = {config["owner_id"], config["psinka_id"], config["fish_id"]}
 
 MOSCOW_TZ = pytz.timezone('Europe/Moscow')
 
@@ -51,9 +50,10 @@ def main_handler():
                 log.check(f"{location} may see nlc", "ALWAYS_CHECK")
                 notifications_load()
                 notifications["data"][notifications["cid"]] = set()
-                for chat in my_set:
-                    mes = bot.send_photo(chat, photo, f"Есть подозрение на наличие серебристых облаков на камере {location}!")
-                    notifications["data"][notifications["cid"]].add((mes.chat.id, mes.message_id))
+                for users in user.get_all_users():
+                    if users['notification'] == "on":
+                        mes = bot.send_photo(users['user_id'], photo, f"Есть подозрение на наличие серебристых облаков на камере {location}!")
+                        notifications["data"][notifications["cid"]].add((mes.chat.id, mes.message_id))
                 notifications["cid"] += 1
                 notifications_save()
 

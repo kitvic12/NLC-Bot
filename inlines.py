@@ -4,7 +4,7 @@ from log import log
 from config import config
 from telebot import types
 
-from database import activity_tracker
+from user_activity import activity_tracker
 
 
 from inline.loader import handler_map

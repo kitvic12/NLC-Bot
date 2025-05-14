@@ -1,21 +1,22 @@
 from api import bot
-import userstate
+from database import user
 from log import log
-from inline.subscribe import load_data
+from database import user
 from telebot import types
 from always_check import main_handler
 from always_check import moscow_time
 
 def place(message, _):
-    if userstate.get_state(message.chat.id, "see nlc"):
+    if user.get_state(message.chat.id, "see nlc"):
         bot.send_message(message.chat.id, "Спасибо за информацию, мы воспользуемся ею и оповестим остальных пользователей!", reply_markup=types.InlineKeyboardMarkup(
             [[types.InlineKeyboardButton("В меню", callback_data="menu")]]
         ))
-        userstate.update_state(message.chat.id, "see nlc", False)
+        user.update_state(message.chat.id, "see nlc", False)
         id = message.chat.id
-        for chat in load_data():
-            if chat != id:
-                bot.send_message(chat, f"Есть сообщения о видимости серебристых облаков в {message.text}! Удачных вам наблюдений!")
+        for users in user.get_all_users():
+            if users['user_id'] != id:
+                if users['notification'] == "on":
+                    bot.send_message(users['user_id'], f"Есть сообщения о видимости серебристых облаков в {message.text}! Удачных вам наблюдений!")
         log("----------------", "CHECK")
         log(f"Start check at {moscow_time()}", "CHECK")
         main_handler()

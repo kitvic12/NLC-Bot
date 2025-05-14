@@ -2,7 +2,7 @@ import requests
 from log import check
 
 locations = {
-    "Азеево": {"lat": 56, "lon": 53},
+    "Азево": {"lat": 56, "lon": 53},
     "Айхал": {"lat": 65, "lon": 111},
     "Альметьевск": {"lat": 54, "lon": 52},
     "Багдарин": {"lat": 54, "lon": 113},

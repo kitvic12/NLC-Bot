@@ -2,7 +2,7 @@ from api import bot
 from telebot import types
 from config import config
 from admins import load_admin
-from database import activity_tracker
+from user_activity import activity_tracker
 
 def resp():
     resp = "Список админов:\n"
