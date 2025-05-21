@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+api.py
 
 # C extensions
 *.so
@@ -175,4 +176,3 @@ cython_debug/
 .pypirc
 *.pkl
 *.h5
-api.py
