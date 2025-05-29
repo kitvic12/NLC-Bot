@@ -1,6 +1,8 @@
 from api import bot
 from telebot import types
 
+from main import change
+
 import pytz
 from datetime import datetime
 
@@ -41,24 +43,23 @@ def moscow_time():
     return now.strftime("%Y-%m-%d %H:%M:%S")
 
 def see_what(call, query):
-    bot.delete_message(call.message.chat.id, call.message.id)
-    bot.send_message(call.message.chat.id, f"Вы хотите посмотреть исключительно камеры в тех местах, где нет облачности или во всех местах?", reply_markup=types.InlineKeyboardMarkup(
+
+    change(call.message, f"Вы хотите посмотреть исключительно камеры в тех местах, где нет облачности или во всех местах?", reply_markup=types.InlineKeyboardMarkup(
         [[types.InlineKeyboardButton("Все камеры", callback_data="see all"),
           types.InlineKeyboardButton("Камеры без облачности", callback_data="see dont")]]
     ))
 
 def all_camera(call):
     global places
-    bot.delete_message(call.message.chat.id, call.message.message_id)
     markup = types.InlineKeyboardMarkup(row_width=1)
 
     for i in range(len(places)):
         button = types.InlineKeyboardButton(text=places[i], callback_data=f"see_place {places[i]}")
         markup.add(button)
-    bot.send_message(call.message.chat.id, "В каком примерном месте вы хотите посмотреть изображение с камеры?", reply_markup=markup)
+    markup.add(types.InlineKeyboardButton("🔙Назад", callback_data="see_video"))
+    change(call.message, "В каком примерном месте вы хотите посмотреть изображение с камеры?", reply_markup=markup)
 
 def place_camera(call, query):
-    bot.delete_message(call.message.chat.id, call.message.id)
     markup = types.InlineKeyboardMarkup(row_width=1)
     for i in range(len(place_dict[query[0]])):
         print(place_dict[query[0]][i])
@@ -66,11 +67,11 @@ def place_camera(call, query):
         markup.add(button)
     markup.add(types.InlineKeyboardButton(text="🔙Назад", callback_data="see all"))
     user.save_user_markup(call.message.chat.id, markup)
-    bot.send_message(call.message.chat.id, "Какую камеру вы хотите посмотреть?", reply_markup=markup)        
+    change(call.message, "Какую камеру вы хотите посмотреть?", reply_markup=markup)        
 
 def dont_camera(call):
 
-    bot.delete_message(call.message.chat.id, call.message.message_id)
+    change(call.message, "Проверка облачности, ожидайте...")
     markup = types.InlineKeyboardMarkup(row_width=1)
     has_cameras = False
 
@@ -85,11 +86,12 @@ def dont_camera(call):
             markup.add(button)
             has_cameras = True
     log.check("----------------", "WEATHER")
+    markup.add(types.InlineKeyboardButton("🔙Назад", callback_data="see_video"))
     if has_cameras:
         user.save_user_markup(call.message.chat.id, markup)
-        bot.send_message(call.message.chat.id, f"Выберите камеру:", reply_markup=markup)
+        change(call.message, f"Выберите камеру:", reply_markup=markup)
     else:
-        bot.send_message(call.message.chat.id, "Нет доступных камер без облачности.")
+        change(call.message, "Нет доступных камер без облачности.", reply_markup=markup)
 
 def what_camera(call, query):
     if query[0] == "all":
@@ -98,10 +100,10 @@ def what_camera(call, query):
         dont_camera(call)
 
 def camera(call, query):
-    last = call.message
-    bot.delete_message(call.message.chat.id, call.message.id)
+    change(call.message, "Загрузка данных, ожидайте...")
     image_bytes = get_camera_image(query[0])
     if image_bytes:
+        bot.delete_message(call.message.chat.id, call.message.id)
         send_image_to_telegram(image_bytes, call.message.chat.id)
         bot.send_message(call.message.chat.id, f"Изображение с камеры {query[0]}", reply_markup=types.InlineKeyboardMarkup(
             [[types.InlineKeyboardButton("Вернуться в меню", callback_data="menu"),
@@ -110,28 +112,11 @@ def camera(call, query):
     else:
         print("Не удалось получить изображение с сайта")
 
-def return_menu(call, query):
-    try:
-        if query[0] == "no":
-            menu(call.message)
-            return
-        elif query[0] == "yes":
-            if query[1] == "callback":
-                user.update_state(call.message.chat.id, "callback", False)
-            bot.delete_message(call.message.chat.id, call.message.id)
-            menu(call.message) 
-            return   
-
-    except:
-        user.clear_user_markup(call.message.chat.id)
-        bot.delete_message(call.message.chat.id, call.message.id)
-        menu(call.message)
 
 
 def return_camera(call, query):
     if not user.get_user_markup(call.message.chat.id):
         all_camera(call)
         return
-    bot.delete_message(call.message.chat.id, call.message.id)
     markup = user.get_user_markup(call.message.chat.id)
-    bot.send_message(call.message.chat.id, "Выберите камеру:", reply_markup=markup)
+    change(call.message, "Выбрерите камеру:", markup)

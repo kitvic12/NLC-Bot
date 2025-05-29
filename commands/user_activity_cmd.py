@@ -22,9 +22,11 @@ def show_all_users(message):
         return
     
     response = "📊 Все пользователи:\n\n"
+    count = 0
     for user_id, data in users.items():
+        count += 1
         moscow_time = data['last_seen'].astimezone(MOSCOW_TZ)  
-        response += (
+        next_user = (
             f"👤 {data['first_name']} {data.get('last_name', '')}\n"
             f"🆔 ID: {user_id} | @{data.get('username', 'нет')}\n"
             f"📅 Первый вход: {data['first_seen'].astimezone(MOSCOW_TZ).strftime('%Y-%m-%d %H:%M:%S %Z')}\n"
@@ -34,11 +36,12 @@ def show_all_users(message):
             f"🔘 Inline: {data['actions']['inline']}\n"
             f"--------------------------------\n"
         )
-    
-    if len(response) > 4000:
-        parts = [response[i:i+4000] for i in range(0, len(response), 4000)]
-        for part in parts:
-            bot.reply_to(message, part)
+        if len(response) + len(next_user) >= 4000:
+            bot.reply_to(message, response)
+            response = next_user
             time.sleep(1)
-    else:
-        bot.reply_to(message, response)
+            continue
+        else:
+            response += next_user
+
+    bot.send_message(message.chat.id, f"Всего пользователей: {count}")

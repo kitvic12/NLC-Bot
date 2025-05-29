@@ -1,7 +1,6 @@
 from inline.see_video_query import see_what
 from inline.see_video_query import what_camera
 from inline.see_video_query import camera
-from inline.see_video_query import return_menu
 from inline.see_video_query import return_camera
 from inline.see_video_query import place_camera
 
@@ -20,6 +19,8 @@ from inline.check_nlc_types import check_nlc_types
 from inline.see_now import see_now, send_all
 
 from inline.admins_inline import admins
+
+from main import return_menu
 
 handler_map = {
     "see_video":see_what,

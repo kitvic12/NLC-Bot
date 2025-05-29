@@ -74,16 +74,9 @@ def handle_photo(message):
         best_class = CLASS_NAMES[np.argmax(preds)]
         
         response = (
-            "🔍 Результат анализа:\n" +
-            "\n".join(result) +
-            f"\n\nНаиболее вероятно: {best_class}"
-        )
-        
-        bot.reply_to(message, response, reply_markup=types.InlineKeyboardMarkup(
-            [[types.InlineKeyboardButton("Повторить", callback_data="nlc check return")],
-             [types.InlineKeyboardButton("В меню", callback_data="menu no")]]
-        ))
-        return True
+            "Типы СО на фото:\n" +
+            "\n".join(result))
+        return response
         
     except Exception as e:
         error_msg = f"❌ Ошибка обработки: {str(e)}"

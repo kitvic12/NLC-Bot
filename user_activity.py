@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 import pytz
 import log
+from database import user as main_db  
 
 USER_DB_FILE = "users_activity.pkl"
 MOSCOW_TZ = pytz.timezone('Europe/Moscow')
@@ -51,11 +52,12 @@ class UserActivityTracker:
             return
 
         user_id = user.id
-        now = self._get_moscow_time() 
+        now = self._get_moscow_time()
         
         if user_id not in self.user_data:
             print(f"➕ New user: ID={user_id}, Username=@{user.username}")
-            self.user_data[user_id] = {
+            
+            new_user = {
                 'username': user.username,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
@@ -63,23 +65,11 @@ class UserActivityTracker:
                 'last_seen': now,
                 'actions': {v: 0 for v in self.ACTION_TYPES.values()}
             }
-        
-        self.user_data[user_id]['last_seen'] = now
-        self.user_data[user_id]['actions'][normalized_type] += 1
-        self._save_data()
-
-        user_id = user.id
-        now = self._get_moscow_time() 
-        
-        if user_id not in self.user_data:
-            self.user_data[user_id] = {
-                'username': user.username,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'first_seen': now,
-                'last_seen': now,
-                'actions': {v: 0 for v in self.ACTION_TYPES.values()}
-            }
+            
+            self.user_data[user_id] = new_user
+            
+            main_db.add_user(user_id, user.username)
+            
             log.log(f"New user registered: {user_id} (@{user.username}) at {now.strftime('%Y-%m-%d %H:%M:%S %Z')}")
         
         self.user_data[user_id]['last_seen'] = now

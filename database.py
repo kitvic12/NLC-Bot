@@ -13,9 +13,9 @@ class UserDatabase:
                 data = json.load(f)
                 return {
                     int(user_id): {
-                        'username': user_data.get('username', ''),  
+                        'username': user_data.get('username', None),  
                         'userstate': {str(k): v for k, v in user_data.get('userstate', {}).items()},
-                        'notification': user_data['notification']
+                        'notification': user_data.get('notification', 'off')
                     }
                     for user_id, user_data in data.items()
                 }
@@ -31,18 +31,19 @@ class UserDatabase:
                 ensure_ascii=False
             )
     
-    def add_user(self, user_id: int, username: str = ''): 
+    def add_user(self, user_id: int, username: Optional[str] = None):  
         if user_id not in self.data:
             self.data[user_id] = {
-                'username': username,
+                'username': username, 
                 'userstate': {},
                 'notification': 'on'
             }
             self._save_data()
-    
+        elif username is not None and self.data[user_id].get('username') is None: 
+            self.data[user_id]['username'] = username
+            self._save_data()
     
     def update_state(self, user_id: int, key: Any, value: Any):
-
         if user_id in self.data:
             str_key = str(key) 
             if 'userstate' not in self.data[user_id]:
@@ -76,7 +77,7 @@ class UserDatabase:
 
     def save_user_markup(self, user_id: int, markup: InlineKeyboardMarkup):
         if user_id not in self.data:
-            self.data[user_id] = {'userstate': {}, 'notification': 'off'}
+            self.add_user(user_id)  
 
         self.data[user_id]['userstate']['keyboard'] = [
             [{'text': btn.text, **{k: v for k, v in btn.__dict__.items() if v}} 
@@ -100,11 +101,19 @@ class UserDatabase:
             if 'keyboard' in self.data[user_id]['userstate']:
                 del self.data[user_id]['userstate']['keyboard']
                 self._save_data()
+                return True
+        return False
+    
+    def clear_all_userstates(self) -> int:
+        count = 0
+        for user_id in self.data:
+            if 'userstate' in self.data[user_id] and self.data[user_id]['userstate']:
+                self.data[user_id]['userstate'] = {}
+                count += 1
+        if count > 0:
+            self._save_data()
+        return count
 
-                
-
-
-import json
 
 def db_for_send(filename: str = 'database.json') -> list:
     try:

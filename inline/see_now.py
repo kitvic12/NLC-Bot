@@ -5,9 +5,10 @@ from camera.get_image import get_camera_image
 from AI.nlc_or_cloud.check_on_camera import handle_photo
 from database import user
 from log import check
-from commands.menu import menu
+from commands.menu import menu_send
 from always_check import moscow_time
 from telebot import types
+from main import change
 
 def see_now(call, query):
     have = []
@@ -15,7 +16,7 @@ def see_now(call, query):
 
     bot.delete_message(call.message.chat.id, call.message.id)
 
-    last = bot.send_message(call.message.chat.id, "Началась проверка на наличие серебристых облаков на камерах, ожидайте...")
+    change(call, "Началась проверка на наличие серебристых облаков на камерах, ожидайте...")
     check("----------------", "CHECK")
     check(f"Start check at {moscow_time()}", "CHECK")
 
@@ -30,6 +31,7 @@ def see_now(call, query):
 
             if check_nlc: 
                 have_nlc = True
+                bot.delete_message(call.message.chat.id, call.message.id)
                 check(f"{place[i]} maybe see nlc", "CHECK")
                 bot.send_photo(call.message.chat.id, photo, f"Подозрение на наличие серебристых облаков на камере  {place[i]}. Вы согласны с ниличем СО на фото?", reply_markup=types.InlineKeyboardMarkup((
                     [[types.InlineKeyboardButton("Да, там есть СО", callback_data=f"send yes {place[i]}")]],
@@ -37,17 +39,17 @@ def see_now(call, query):
                 )))
 
     check("----------------", "CHECK")
-    bot.delete_message(call.message.chat.id, last.id)
+
 
     if not have_nlc:
-        bot.send_message(call.message.chat.id, "Серебристые облака не были обнаружены, ожидайте возврата в меню.")
-    menu(call.message)
+        change(call.message, "Серебристые облака не были обнаружены, ожидайте возврата в меню.")
+        menu_send(call.message)
 
 
 def send_all(call, query):
     if query[0] == "no":
         bot.send_message(call.message.chat.id, "Хорошо, буду знать, что это ошибочное сообщение.")
-        menu(call.message)
+        menu_send(call.message)
         return
     elif query[0] == "yes":
         mes = bot.send_message(call.message.chat.id, "Хорошо, запускаю рассылку оповещений, ожидайте...")
@@ -58,4 +60,4 @@ def send_all(call, query):
             elif users['notification'] == 'on':
                 bot.send_photo(users['user_id'], f"Были обнаружены серебристые облака на камере {query[1]}! Удачных наблюдений!")
         bot.edit_message_text("Все оповещения успешно отправлены! Ожидайте возврата в меню", call.message.chat.id, mes.id)        
-        menu(call.message)
+        menu_send(call.message)
