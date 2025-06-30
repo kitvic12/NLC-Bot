@@ -4,15 +4,17 @@ from inline.see_video_query import camera
 from inline.see_video_query import return_camera
 from inline.see_video_query import place_camera
 
+from inline.give_info import give
 
 from inline.do_you_see_nlc import see_nlc
 
 from inline.subscribe import need_resp
 
-from inline.about_nlc import type_choise
-from inline.about_nlc import light_check
-from inline.about_nlc import types_send_nlc
-from inline.about_nlc import back
+from inline.about_nlc import main_handler
+
+from inline.add_data import get_intensity
+from inline.add_data import get_brightness
+from inline.add_data import get_weather
 
 from inline.check_nlc_types import check_nlc_types
 
@@ -27,16 +29,17 @@ handler_map = {
     "see":what_camera,
     "seen":camera,
     "menu":return_menu,
-    "light":light_check,
-    "type_choise":type_choise,
-    "types":types_send_nlc,
-    "back":back,
+    "nlc":main_handler,
     "return_camera":return_camera,
     "will_see":see_nlc,
     "subscribe":need_resp,
-    "nlc":check_nlc_types,
+    "nlc_types":check_nlc_types,
     "see_now": see_now,
     "admin":admins,
     "send":send_all,
-    "see_place":place_camera
+    "see_place":place_camera,
+    "give":give,
+    "intensity":get_intensity,
+    "weather":get_weather,
+    "brightness":get_brightness
 }

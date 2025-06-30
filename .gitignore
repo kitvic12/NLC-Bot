@@ -181,3 +181,7 @@ cython_debug/
 *.pkl
 *.h5
 
+# Custom ignored files
+ignore/token.py
+inline/pat_token.py
+/remote_repo/

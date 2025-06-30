@@ -24,7 +24,8 @@ def checker(id):
     else:
         murkup.add(types.InlineKeyboardButton("Включить оповещения", callback_data="subscribe on"),
         types.InlineKeyboardButton("Сообщить о видимости", callback_data="will_see"))   
-    murkup.add(types.InlineKeyboardButton("Анализ фото", callback_data="nlc check"))   
+    murkup.add(types.InlineKeyboardButton("Анализ фото", callback_data="nlc_types check"))   
+    murkup.add(types.InlineKeyboardButton("Поделиться наблюдением", callback_data="give start"))
     return murkup
 
 
