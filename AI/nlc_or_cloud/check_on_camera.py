@@ -1,6 +1,6 @@
 import keras.src
-from api import bot
-from log import check
+from core.api import bot
+from core.log import check
 from telebot import types
 import numpy as np
 from PIL import Image

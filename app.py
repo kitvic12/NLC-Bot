@@ -1,12 +1,11 @@
-from api import bot
-from config import config
+from core.api import bot
+from core.config import config
 
 
-from message import callback_message, callback_image
-from inlines import callback_inline
+import core.loader
 
 
-import log
+from core import log
 import traceback
 import time
 
